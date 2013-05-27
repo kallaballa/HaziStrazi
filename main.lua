@@ -22,10 +22,9 @@ BABY_HEIGHT=32
 BASE_X = 0
 BASE_Y = SCREEN_UNITS_Y / 2 * -1
 
-MIN_ENEMY_SPEED = 200
-MAX_ENEMY_SPEED = 300
-
-ALLY_SPEED = 300
+MIN_ENEMY_SPEED = 50
+MAX_ENEMY_SPEED = 200
+ALLY_SPEED = 500
 
 MOAISim.openWindow ( "Rocket Lobster", SCREEN_WIDTH, SCREEN_HEIGHT )
 
@@ -36,6 +35,17 @@ viewport:setSize ( SCREEN_WIDTH, SCREEN_HEIGHT )
 layer = MOAILayer2D.new ()
 layer:setViewport ( viewport )
 MOAISim.pushRenderPass ( layer )
+
+font =  MOAIFont.new ()
+font:loadFromTTF ("arialbd.ttf", "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.?! ", 12, 163 )
+
+textbox = MOAITextBox.new ()
+textbox:setFont ( font )
+textbox:setRect ( -160, -80, 160, 80 )
+textbox:setLoc ( 0, -160 )
+textbox:setAlignment ( MOAITextBox.CENTER_JUSTIFY )
+textbox:setYFlip ( true )
+alive = true
 
 --==============================================================
 -- utility functions
@@ -53,6 +63,12 @@ function distance ( x1, y1, x2, y2 )
 	return math.sqrt ((( x2 - x1 ) ^ 2 ) + (( y2 - y1 ) ^ 2 ))
 end
 
+local clock = os.clock
+function sleep(n)  -- seconds
+  local t0 = clock()
+  while clock() - t0 <= n do end
+end
+
 --==============================================================
 -- base
 --==============================================================
@@ -64,15 +80,27 @@ haziGfx = MOAIGfxQuad2D.new ()
 haziGfx:setTexture ( "images/luftballon.png" )
 haziGfx:setRect ( -HAZI_WIDTH, -HAZI_HEIGHT, HAZI_WIDTH / 3, HAZI_HEIGHT / 3)
 
-hazi = MOAIProp2D.new ()
-hazi:setDeck ( haziGfx )
-hazi:setLoc ( BASE_X, BASE_Y * -1)
-layer:insertProp ( hazi )
-
 base = MOAIProp2D.new ()
 base:setDeck ( lobsterGfx )
 base:setLoc ( BASE_X, BASE_Y )
+
 layer:insertProp ( base )
+layer:insertProp ( textbox )
+
+--==============================================================
+-- hazi
+--==============================================================
+
+function makeHazi()
+  hazi = MOAIProp2D.new ()
+  hazi:setDeck ( haziGfx )
+  hazi:setLoc ( BASE_X, BASE_Y * -1)
+  hazi.hits = 0
+  hazi.size = 75
+  layer:insertProp ( hazi )
+end
+
+makeHazi()
 
 --==============================================================
 -- baby
@@ -87,7 +115,9 @@ function makeBaby(x, y)
   baby:setDeck ( babyGfx )
   baby:setLoc ( x, y )
   baby.size = 32
+  baby.alive = true
   layer:insertProp ( baby )  
+  return baby
 end
 
 local babyOff = -SCREEN_WIDTH / 2;
@@ -123,27 +153,10 @@ function makeExplosion ( x, y, size )
   layer:insertProp ( explosion )
 
   ----------------
-  function explosion:checkHit ( prop )
-
-    local x1, y1 = self:getLoc ()
-    local x2, y2 = prop:getLoc ()
-
-    return distance ( x1, y1, x2, y2 ) <= self.size
-  end
-
-  ----------------
   function explosion:main ()
 	    
     for i = 1, self.size do
-      
       self:setFrame ( -i, -i, i, i )
-      
-      for rocket in pairs ( enemyRockets ) do
-	      if self:checkHit ( rocket ) then
-		      rocket:explode ( 64 )
-	      end
-      end
-      
       coroutine.yield ()
     end
     
@@ -168,62 +181,91 @@ enemyRockets = {}
 --------------------------------
 function makeRocket ( isAlly, startX, startY, targetX, targetY, speed )
 
-local travelDist = distance ( startX, startY, targetX, targetY )
-local travelTime = travelDist / speed
+  local travelDist = distance ( startX, startY, targetX, targetY )
+  local travelTime = travelDist / speed
 
-local rocket = MOAIProp2D.new ()
-rocket:setDeck ( rocketGfx )
-layer:insertProp ( rocket )
+  local rocket = MOAIProp2D.new ()
+  rocket:setDeck ( rocketGfx )
+  layer:insertProp ( rocket )
 
-rocket:setLoc ( startX, startY )
-rocket:setRot ( angle ( startX, startY, targetX, targetY ) + 90 )
-rocket.isAlly = isAlly
-
-if not isAlly then
-  enemyRockets [ rocket ] = rocket
-end
-
-----------------
-function rocket:explode ( size )
-  local x, y = self:getLoc ()
-  local explosion = makeExplosion ( x, y, size )
-
-  layer:removeProp ( self )		
-  enemyRockets [ self ] = nil
-  self.thread:stop ()
-end
-
-----------------			
-function rocket:main ()
-		  
-  -- wait for the rocket to travel all the way to its target
-  MOAIThread.blockOnAction ( self:seekLoc ( targetX, targetY, travelTime, MOAIEaseType.LINEAR ))
+  rocket:setLoc ( startX, startY )
+  rocket:setRot ( angle ( startX, startY, targetX, targetY ) + 90 )
+  rocket.isAlly = isAlly
+  rocket.size = 32
   
-  -- spawn an explosion where the rocket is
-  if self.isAlly then
-    -- ally rocket hit end of its path, so it explodes
-    self:explode ( 64 )
-  else
-    -- if enemy rocket gets to end of its path, the base is hit so do big explosion
-    self:explode ( 128 )
-    
-    -- set the game over flag
-    gameOver = true
-    
-    -- hide the base
-    layer:removeProp ( base )
+  if not isAlly then
+    enemyRockets [ rocket ] = rocket
   end
-end	
 
-rocket.thread = MOAIThread.new ()
-rocket.thread:run ( rocket.main, rocket )
+  ----------------
+  function rocket:explode ( size )
+    local x, y = self:getLoc ()
+    local explosion = makeExplosion ( x, y, size )
+
+    layer:removeProp ( self )
+    
+    if not isAlly then
+      enemyRockets [ self ] = nil
+    end
+    
+    self.thread:stop ()
+  end
+
+    function rocket:checkHit ( prop )
+
+    local x1, y1 = self:getLoc ()
+    local x2, y2 = prop:getLoc ()
+
+    return distance ( x1, y1, x2, y2 ) - prop.size <= self.size
+  end
+
+
+  ----------------			
+  function rocket:main ()
+		    
+    -- wait for the rocket to travel all the way to its target
+    local seekAction = self:seekLoc ( targetX, targetY, travelTime, MOAIEaseType.LINEAR )
+    
+    while seekAction:isActive() do     
+      if self.isAlly then
+	for rocket in pairs ( enemyRockets ) do
+	  if self:checkHit ( rocket ) then
+	    self:explode ( 32 )
+	    rocket:explode( 32 )
+	  end
+	end
+	
+	if self:checkHit(hazi) then
+	  hazi.hits = hazi.hits + 1;
+	  self:explode ( 32 )
+	end
+      else
+	for index, baby in pairs ( babies ) do
+	  if self:checkHit ( baby ) then
+	    baby.alive = false
+	    layer:removeProp(baby)
+	    self:explode ( 32 )
+	  end
+	end
+	
+
+      end
+      coroutine.yield ()
+    end
+    
+    layer:removeProp ( self )
+  end	
+
+  rocket.thread = MOAIThread.new ()
+  rocket.thread:run ( rocket.main, rocket )
 
 end
 
 --------------------------------
 function launchEnemyRocket ( startX, startY )
-  print(#babies)
-  makeRocket ( false, startX, startY, babies[math.random(1,#babies)].getLoc(), math.random ( MIN_ENEMY_SPEED, MAX_ENEMY_SPEED ))
+  local baby = babies[math.random(1,#babies)]
+  local babyX, babyY = baby:getLoc()
+  makeRocket ( false, startX, startY, babyX, babyY, math.random ( MIN_ENEMY_SPEED, MAX_ENEMY_SPEED ))
 end
 
 --------------------------------
@@ -238,41 +280,59 @@ mainThread = MOAIThread.new ()
 
 mainThread:run ( 
 
-	function ()
+  function ()
+    local level = 0
+    while not gameOver do
+      level = level + 1
+      local frames = 0
+      hazi.hits = 0
+      textbox:setString ( "Level " .. tostring(level) )
+      local spoolAction = textbox:spool ()
+      while spoolAction:isActive() do
+	coroutine.yield()
+      end
+      sleep(1)
+      textbox:setString ( "Save the babies!" )
+      spoolAction = textbox:spool ()
+      while spoolAction:isActive() do
+	coroutine.yield()
+      end
+      
+      while not MOAIInputMgr.device.mouseLeft:down() do
+	coroutine.yield()
+      end
+      textbox:setString ("")
+      textbox:spool ()
+      
+      while not gameOver and not (hazi.hits >= 50) do
+	print(hazi.hits)
+	coroutine.yield()
+	frames = frames + 1
+	
+	if frames % 30 == 0 then
+	  launchEnemyRocket (hazi:getLoc())
+	end
+	if frames >= 90 then
+	  frames = 0
+	  hazi:seekLoc( 
+	    math.random( -SCREEN_WIDTH + 200, SCREEN_WIDTH - 200 ),
+	    math.random( 150, SCREEN_HEIGHT - HAZI_HEIGHT ), math.random( 1, 3 ), 
+	    MOAIEaseType.EASE_IN )
+	end
 
-		local frames = 0
-
-		while not gameOver do
-		
-			coroutine.yield()
-			frames = frames + 1
-			
-			if frames >= 90 then
-				frames = 0
-				launchEnemyRocket (hazi:getLoc())
-				hazi:seekLoc( 
-				  math.random( -SCREEN_WIDTH + 200, SCREEN_WIDTH - 200 ),
-				  math.random( 150, SCREEN_HEIGHT - HAZI_HEIGHT ), math.random( 1, 3 ), 
-				  MOAIEaseType.EASE_IN )
-			end
-
-			if MOAIInputMgr.device.mouseLeft:down () then
-				launchAllyRocket ( layer:wndToWorld ( MOAIInputMgr.device.pointer:getLoc () ))
-			end
-		end
-		
-		local font = MOAIFont.new ()
-		font:loadFromTTF ( "arialbd.ttf", "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.?!", 12, 163 )
-
-		local textbox = MOAITextBox.new ()
-		textbox:setFont ( font )
-		textbox:setTextSize ( font:getScale ())
-		textbox:setRect ( -160, -80, 160, 80 )
-		textbox:setAlignment ( MOAITextBox.CENTER_JUSTIFY )
-		textbox:setYFlip ( true )
-		textbox:setString ( "You are dead!" )
-		
-		layer:insertProp ( textbox )
-		textbox:spool ()
-	end 
+	if MOAIInputMgr.device.mouseLeft:down () then
+	  launchAllyRocket ( layer:wndToWorld ( MOAIInputMgr.device.pointer:getLoc () ))
+	end
+	      
+	gameOver = true
+	for index, baby in pairs ( babies ) do
+	  if baby.alive then
+	    gameOver = false
+	  end
+	end
+      end
+      textbox:setString ( "You are dead!" )
+      textbox:spool ()
+    end 
+  end
 )
