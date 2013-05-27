@@ -126,9 +126,6 @@ local babies  = {
   makeBaby(babyOff + babySpace,BASE_Y),
   makeBaby(babyOff + babySpace * 2,BASE_Y),
   makeBaby(babyOff + babySpace * 3,BASE_Y),
-  makeBaby(babyOff + babySpace * 4,BASE_Y),
-  makeBaby(babyOff + babySpace * 5,BASE_Y),
-  makeBaby(babyOff + babySpace * 6,BASE_Y),
   makeBaby(babyOff + babySpace * 7,BASE_Y),
   makeBaby(babyOff + babySpace * 8,BASE_Y),
   makeBaby(babyOff + babySpace * 9,BASE_Y),
@@ -284,6 +281,8 @@ mainThread:run (
     local level = 0
     while not gameOver do
       level = level + 1
+      MIN_ENEMY_SPEED = MIN_ENEMY_SPEED * 1.2
+      MAX_ENEMY_SPEED = MAX_ENEMY_SPEED * 1.2
       local frames = 0
       hazi.hits = 0
       textbox:setString ( "Level " .. tostring(level) )
