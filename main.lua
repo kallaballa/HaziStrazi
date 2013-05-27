@@ -73,7 +73,7 @@ end
 -- base
 --==============================================================
 lobsterGfx = MOAIGfxQuad2D.new ()
-lobsterGfx:setTexture ( "openlobster.png" )
+lobsterGfx:setTexture ( "images/openlobster.png" )
 lobsterGfx:setRect ( -128, -128, 128, 128 )
 
 haziGfx = MOAIGfxQuad2D.new ()
@@ -120,8 +120,8 @@ function makeBaby(x, y)
   return baby
 end
 
-local babyOff = -SCREEN_WIDTH / 2;
 local babySpace = BABY_WIDTH * 1.5
+local babyOff = -SCREEN_WIDTH / 2;
 local babies  = {
   makeBaby(babyOff + babySpace,BASE_Y),
   makeBaby(babyOff + babySpace * 2,BASE_Y),
@@ -135,7 +135,7 @@ local babies  = {
 -- explosion rig
 --==============================================================
 explosionGfx = MOAIGfxQuad2D.new ()
-explosionGfx:setTexture ( "fire.png" )
+explosionGfx:setTexture ( "images/fire.png" )
 explosionGfx:setRect ( -32, -32, 32, 32 )
 
 
@@ -169,7 +169,7 @@ end
 -- rocket 
 --==============================================================
 rocketGfx = MOAIGfxQuad2D.new ()
-rocketGfx:setTexture ( "rocket.png" )
+rocketGfx:setTexture ( "images/rocket.png" )
 rocketGfx:setRect ( -32, -32, 32, 32 )
 
 gameOver = false
