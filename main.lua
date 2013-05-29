@@ -338,7 +338,7 @@ mainThread:run (
 	frames = frames + 1
 	
 	if frames % 45 == 0 then
-	 -- launchEnemyRocket (hazi:getLoc())
+	  launchEnemyRocket (hazi:getLoc())
 	end
 	
 	if frames >= 90 then
@@ -348,8 +348,6 @@ mainThread:run (
 	    math.random( SCREEN_HEIGHT / 3, SCREEN_HEIGHT - HAZI_HEIGHT ), math.random( 1, 3 ), 
 	    MOAIEaseType.EASE_IN )
 	end
-	
-
 	
 	if MOAIInputMgr.device.mouseLeft:down () then
 	  launchAllyRocket ( layer:wndToWorld ( MOAIInputMgr.device.pointer:getLoc () ))
