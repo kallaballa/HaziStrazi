@@ -11,13 +11,16 @@ SCREEN_HEIGHT = SCREEN_UNITS_Y
 SCALE_X = SCREEN_UNITS_X / 480;
 SCALE_Y = SCREEN_UNITS_Y / 320;
 
+BG_WIDTH = 240 * SCALE_X
+BG_HEIGHT = 160 * SCALE_Y
+
 HAZI_WIDTH = 75 * SCALE_X
 HAZI_HEIGHT = 124 * SCALE_Y
 
 BABY_WIDTH= 32 * SCALE_X
 BABY_HEIGHT= 32 * SCALE_Y
 
-GUNFIRE_WIDTH = 3 * SCALE_X
+GUNFIRE_WIDTH = 2 * SCALE_X
 GUNFIRE_HEIGHT = 6 * SCALE_Y
 
 FIRE_WIDTH = 32 * SCALE_X
@@ -33,7 +36,7 @@ MIN_ENEMY_SPEED = 50
 MAX_ENEMY_SPEED = 150
 ALLY_SPEED = 900
 
-MOAISim.openWindow ( "Rocket Lobster", SCREEN_WIDTH, SCREEN_HEIGHT )
+MOAISim.openWindow ( "Hazi Strazi Luftballon", SCREEN_WIDTH, SCREEN_HEIGHT )
 
 viewport = MOAIViewport.new ()
 viewport:setScale ( SCREEN_UNITS_X, SCREEN_UNITS_Y )
@@ -85,9 +88,9 @@ end
 --==============================================================
 -- base
 --==============================================================
-lobsterGfx = MOAIGfxQuad2D.new ()
-lobsterGfx:setTexture ( "images/openlobster.png" )
-lobsterGfx:setRect ( -128, -128, 128, 128 )
+bgGfx = MOAIGfxQuad2D.new ()
+bgGfx:setTexture ( "images/flakwien.png" )
+bgGfx:setRect ( -BG_WIDTH, -BG_HEIGHT, BG_WIDTH, BG_HEIGHT)
 
 haziGfx = MOAIGfxQuad2D.new ()
 haziGfx:setTexture ( "images/luftballon.png" )
@@ -102,8 +105,8 @@ gunfireGfx:setTexture ( "images/gunfire.png" )
 gunfireGfx:setRect ( -GUNFIRE_WIDTH, -GUNFIRE_HEIGHT, GUNFIRE_WIDTH, GUNFIRE_HEIGHT)
 
 base = MOAIProp2D.new ()
-base:setDeck ( lobsterGfx )
-base:setLoc ( BASE_X, BASE_Y )
+base:setDeck ( bgGfx )
+base:setLoc ( 0, 0 )
 
 kaputt = MOAIProp2D.new ()
 kaputt:setDeck ( kaputtGfx )
@@ -317,7 +320,8 @@ mainThread:run (
       hazi.hits = 0
       showText ( "Level " .. tostring(level) )
       sleep(1)
-      showText ( "Rette die babies!" )
+      showText ( "Rette die Babies!" )
+      sleep(1)
       while not MOAIInputMgr.device.mouseLeft:down() do
 	coroutine.yield()
       end
@@ -327,7 +331,6 @@ mainThread:run (
       layer:insertProp(hazi)
       
       while not gameOver and not (hazi.hits >= 50) do
-	print(hazi.hits)
 	coroutine.yield()
 	frames = frames + 1
 	
