@@ -3,8 +3,11 @@
 --==============================================================
 print ( "hello, moai!" )
 
-SCREEN_UNITS_X = 960
-SCREEN_UNITS_Y = 640
+
+MOAISim.enterFullscreenMode()
+
+SCREEN_UNITS_X = MOAIEnvironment.horizontalResolution
+SCREEN_UNITS_Y = MOAIEnvironment.verticalResolution
 SCREEN_WIDTH = SCREEN_UNITS_X
 SCREEN_HEIGHT = SCREEN_UNITS_Y
 
@@ -23,11 +26,11 @@ BABY_HEIGHT= 32 * SCALE_Y
 GUNFIRE_WIDTH = 2 * SCALE_X
 GUNFIRE_HEIGHT = 6 * SCALE_Y
 
-FIRE_WIDTH = 32 * SCALE_X
-FIRE_HEIGHT = 32 * SCALE_Y
+FIRE_WIDTH = 20 * SCALE_X
+FIRE_HEIGHT = 20 * SCALE_Y
 
-ROCKET_WIDTH = 32 * SCALE_X
-ROCKET_HEIGHT = 32 * SCALE_Y
+ROCKET_WIDTH = 20 * SCALE_X
+ROCKET_HEIGHT = 20 * SCALE_Y
 
 BASE_X = 0
 BASE_Y = SCREEN_UNITS_Y / 2 * -1
@@ -36,7 +39,8 @@ MIN_ENEMY_SPEED = 50
 MAX_ENEMY_SPEED = 150
 ALLY_SPEED = 900
 
-MOAISim.openWindow ( "Hazi Strazi Luftballon", SCREEN_WIDTH, SCREEN_HEIGHT )
+
+-- MOAISim.openWindow ( "Hazi Strazi Luftballon", SCREEN_WIDTH, SCREEN_HEIGHT )
 
 viewport = MOAIViewport.new ()
 viewport:setScale ( SCREEN_UNITS_X, SCREEN_UNITS_Y )
@@ -322,7 +326,7 @@ mainThread:run (
       sleep(1)
       showText ( "Rette die Babies!" )
       sleep(1)
-      while not MOAIInputMgr.device.mouseLeft:down() do
+      while not MOAIInputMgr.device.touch:down() do
 	coroutine.yield()
       end
       textbox:setString ("")
@@ -334,20 +338,20 @@ mainThread:run (
 	coroutine.yield()
 	frames = frames + 1
 	
-	if frames % 45 == 0 then
+	if frames % 90 == 0 then
 	  launchEnemyRocket (hazi:getLoc())
 	end
 	
 	if frames >= 90 then
 	  frames = 0
 	  hazi:seekLoc( 
-	    math.random( -SCREEN_WIDTH + HAZI_WIDTH * 2, SCREEN_WIDTH - HAZI_WIDTH * 2),
+	    math.random( -SCREEN_WIDTH + HAZI_WIDTH * 3, SCREEN_WIDTH - HAZI_WIDTH * 3),
 	    math.random( SCREEN_HEIGHT / 3, SCREEN_HEIGHT - HAZI_HEIGHT ), math.random( 1, 3 ), 
 	    MOAIEaseType.EASE_IN )
 	end
 	
-	if MOAIInputMgr.device.mouseLeft:down () then
-	  launchAllyRocket ( layer:wndToWorld ( MOAIInputMgr.device.pointer:getLoc () ))
+	if MOAIInputMgr.device.touch:down () then
+	  launchAllyRocket ( layer:wndToWorld ( MOAIInputMgr.device.touch:getTouch (MOAIInputMgr.device.touch:getActiveTouches()) ))
 	end
 	      
 	gameOver = true
